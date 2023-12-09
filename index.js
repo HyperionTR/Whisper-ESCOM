@@ -4,6 +4,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {readFile} = require('fs').promises;
+const fs = require('fs');
+
 // Conexión a la BD
 const mysql = require('mysql2');
 var config = {
@@ -20,7 +22,8 @@ conn.connect(
     function(err){
         if(err){
             console.log("!!! Cannot connect !!! Error:");
-            throw err;
+            // Mostrando el mensaje de erorr en casod e queno hala e.stack
+            (console.error || console.log).call(console, err.stack || err);
         }
         else{
             console.log("Connection established.");
@@ -62,9 +65,13 @@ app.get('/', async (req, res) => {
 });
 
 app.post('/', (req, res) => {
-    let user = req.body.user;
-    let pass = req.body.password;
-    conn.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
+    try {
+        let user = req.body.user;
+        let pass = req.body.password;
+        conn.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
+    } catch (error) {
+        (console.error || console.log).call(console, error.stack || error);
+    }
 });
 
 app.get('/usuarios', (req, res) => {
