@@ -26,23 +26,10 @@ conn.connect(
             (console.error || console.log).call(console, err.stack || err);
         }
         else{
-            console.log("Connection established.");
+            console.log(`Connection with ${config.database} established!.`);
             readData();
         }
     });
-
-
-// Function to retrieve all rows from users table
-function readData(){
-    conn.query("SELECT * FROM users",function(err,results,fields){
-        if(err) throw err;
-        else console.log("Selected "+results.length+" rows.");
-        for(i=0;i<results.length;i++){
-            console.log("Row: "+JSON.stringify(results[i]));
-        }
-        console.log("Done.");
-    });
-}
 
 // Creamos la aplicación express
 const app = express();
@@ -75,7 +62,17 @@ app.post('/', (req, res) => {
 });
 
 app.get('/usuarios', (req, res) => {
-    readData();
+    // Function to retrieve all rows from users table
+    function readData(){
+        conn.query("SELECT * FROM users",function(err,results,fields){
+            if(err) throw err;
+            else console.log("Selected "+results.length+" rows.");
+            for(i=0;i<results.length;i++){
+                console.log("Row: "+JSON.stringify(results[i]));
+            }
+            console.log("Done.");
+        });
+    }
 });
 
 app.post('/usuarios', (req, res) => {
