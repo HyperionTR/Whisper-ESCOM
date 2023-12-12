@@ -9,11 +9,11 @@ const fs = require('fs');
 // Conexión a la BD
 const mysql = require('mysql2');
 var config = {
-    host:"whisper-escom-server.mysql.database.azure.com",
-    user:"twmopiafgh",
-    password:"Whisper-ESCOM",
-    database:"whisper-escom-database",
-    port:3306,
+    host:process.env.AZURE_MYSQL_HOST,
+    user:process.env.AZURE_MYSQL_USER,
+    password:process.env.AZURE_MYSQL_PASSWORD,
+    database:process.env.AZURE_MYSQL_DATABASE,
+    port:process.env.AZURE_MYSQL_PORT,
     ssl:{ca:fs.readFileSync("DigiCertGlobalRootCA.crt.pem")}
 }
 
@@ -73,6 +73,24 @@ app.post('/', (req, res) => {
     }
 });
 
+
+app.get('/register', async (req, res) => {
+    // 1. Enviar los datos del usuario a la BD
+    // 2. Enviar un correo de verificación al usuario (con el codigo aleatorio)
+    // 3. Mostrar formulario para ingresar el codigo
+});
+
+app.get('/restablecer', async (req, res) => {
+    // 1. Envia correo de restablecimiento de contraseña (con el codigo aleatorio)
+    // 2. Mostrar formulario para ingresar el codigo
+});
+
+app.get('/verify', async (req, res) => {
+    // Recibir el codigo de verificación
+    // Verificar que el codigo sea correcto
+    // Mandar el usuario a la pagina principal
+});
+
 app.get('/usuarios', (req, res) => {
     readData();
 });
@@ -85,7 +103,8 @@ app.post('/usuarios', (req, res) => {
     "username VARCHAR(30),"+
     "password VARCHAR(30)"+
     ")"
-);
+    );
+    console.log("Users table created.");
 
 });
 
@@ -98,7 +117,9 @@ app.put('/usuarios', (req, res) => {
 });
 
 app.delete('/usuarios', (req, res) => {
-    res.send('Aqui se eliminara el usuario con id: ' + req.params.id);
+    // Borrar la base de datos de usuarios
+    conn.query("DROP TABLE users");
+    console.log("Users table deleted.");
 });
 
 // Iniciamos nuestro servidor web
