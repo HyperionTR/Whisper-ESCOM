@@ -63,7 +63,7 @@ app.get('/verify', async (req, res) => {
 
 app.get('/usuarios', (req, res) => {
     // Obtener los datos de todos los usuarios de la BD
-    res.send(getUserData());
+    res.send(JSON.stringify(getUserData()));
 });
 
 app.post('/usuarios', (req, res) => {
