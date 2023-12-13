@@ -24,15 +24,15 @@ conn.connect(
     });
 
 // Function to retrieve all rows from users table
-function getUserData(){
+function getUserData(callback){
 	return conn.query("SELECT * FROM users", function(err,qresults) {
 		if(err) throw err;
 		else {
 			console.log(`Done retrieving ${qresults.length} rows.`);
-			return {
+			callback({
 				length: qresults.length,
 				results: qresults
-			};
+			});
 		}
 	});
 }
