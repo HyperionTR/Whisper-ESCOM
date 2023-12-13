@@ -24,14 +24,15 @@ conn.connect(
     });
 
 // Function to retrieve all rows from users table
-function getUserData(){
-	let reply = {length:0, results:[]};
-    conn.query("SELECT * FROM users",function(err,results,fields) {
+async function getUserData(){
+	let reply = await conn.promise().query("SELECT * FROM users", function(err,results,fields) {
         if(err) throw err;
-        else reply.lenght = results.length;
-        reply.results = JSON.stringify(results);
-        console.log(`Done retrieving ${results.length} rows.`);
+        else return {
+			length: results.length,
+			results: JSON.stringify(results)
+		};
     });
+	console.log(`Done retrieving ${reply.length} rows.`);
 	return reply;
 }
 
