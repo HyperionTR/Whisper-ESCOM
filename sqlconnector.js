@@ -25,15 +25,16 @@ conn.connect(
 
 // Function to retrieve all rows from users table
 function getUserData(){
-	let reply = conn.query("SELECT * FROM users", function(err,results,fields) {
-        if(err) throw err;
-        else return {
-			length: results.length,
-			results: JSON.stringify(results)
-		};
-    });
-	console.log(`Done retrieving ${reply.length} rows.`);
-	return reply;
+	return conn.query("SELECT * FROM users", function(err,qresults) {
+		if(err) throw err;
+		else {
+			console.log(`Done retrieving ${qresults.length} rows.`);
+			return {
+				length: qresults.length,
+				results: JSON.stringify(qresults)
+			};
+		}
+	});
 }
 
 module.exports = {
