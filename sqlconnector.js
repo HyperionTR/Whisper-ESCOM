@@ -31,7 +31,7 @@ function getUserData(){
 			console.log(`Done retrieving ${qresults.length} rows.`);
 			return {
 				length: qresults.length,
-				results: JSON.stringify(qresults)
+				results: qresults
 			};
 		}
 	});
