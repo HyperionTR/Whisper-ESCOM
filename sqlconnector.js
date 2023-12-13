@@ -4,7 +4,7 @@ const fs = require('fs');
 var config = {
     host:process.env.AZURE_MYSQL_HOST,
     user:process.env.AZURE_MYSQL_USER,
-    password:"Whisper-ESCOM",
+    password:process.env.AZURE_MYSQL_PASSWORD,
     database:process.env.AZURE_MYSQL_DATABASE,
     port:process.env.AZURE_MYSQL_PORT,
     ssl:{ca:fs.readFileSync("DigiCertGlobalRootCA.crt.pem")}
@@ -24,8 +24,8 @@ conn.connect(
     });
 
 // Function to retrieve all rows from users table
-async function getUserData(){
-	let reply = await conn.promise().query("SELECT * FROM users", function(err,results,fields) {
+function getUserData(){
+	let reply = conn.query("SELECT * FROM users", function(err,results,fields) {
         if(err) throw err;
         else return {
 			length: results.length,
