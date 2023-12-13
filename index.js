@@ -4,44 +4,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {readFile} = require('fs').promises;
-const fs = require('fs');
-
-// Conexión a la BD
-const mysql = require('mysql2');
-var config = {
-    host:process.env.AZURE_MYSQL_HOST,
-    user:process.env.AZURE_MYSQL_USER,
-    password:process.env.AZURE_MYSQL_PASSWORD,
-    database:process.env.AZURE_MYSQL_DATABASE,
-    port:process.env.AZURE_MYSQL_PORT,
-    ssl:{ca:fs.readFileSync("DigiCertGlobalRootCA.crt.pem")}
-}
-
-const conn = new mysql.createConnection(config);
-conn.connect(
-    function(err){
-        if(err){
-            console.log("!!! Cannot connect !!! Error:");
-            // Mostrando el mensaje de erorr en casod e queno hala e.stack
-            (console.error || console.log).call(console, err.stack || err);
-        }
-        else{
-            console.log(`Connection with ${config.database} established!.`);
-            // readData();
-        }
-    });
-
-// Function to retrieve all rows from users table
-function readData(){
-    conn.query("SELECT * FROM users",function(err,results,fields){
-        if(err) throw err;
-        else console.log("Selected "+results.length+" rows.");
-        for(i=0;i<results.length;i++){
-            console.log("Row: "+JSON.stringify(results[i]));
-        }
-        console.log("Done.");
-    });
-}
+const {conn, getUserData} = require('./sqlconnector.js');
+const {sendMail} = require('./mailer.js');
 
 // Creamos la aplicación express
 const app = express();
@@ -63,13 +27,15 @@ app.get('/', async (req, res) => {
 	}
 });
 
-app.post('/', (req, res) => {
+app.post('/', async (req, res) => {
     try {
         let user = req.body.user;
         let pass = req.body.password;
         conn.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
+        res.send( await readFile('./page/index.html', 'utf8') );
     } catch (error) {
         (console.error || console.log).call(console, error.stack || error);
+        res.status(404).send('404 Not Found');
     }
 });
 
@@ -89,10 +55,15 @@ app.get('/verify', async (req, res) => {
     // Recibir el codigo de verificación
     // Verificar que el codigo sea correcto
     // Mandar el usuario a la pagina principal
+    let user = req.body.user;
+    let email = req.body.email;
+    sendMail(user, email);
+    res.send(`Correo para ${user} en ${email} enviado.`);
 });
 
 app.get('/usuarios', (req, res) => {
-    readData();
+    // Obtener los datos de todos los usuarios de la BD
+    res.send(getUserData());
 });
 
 app.post('/usuarios', (req, res) => {
@@ -104,8 +75,7 @@ app.post('/usuarios', (req, res) => {
     "password VARCHAR(30)"+
     ")"
     );
-    console.log("Users table created.");
-
+    res.send("Users table created.");
 });
 
 app.put('/usuarios', (req, res) => {
@@ -113,13 +83,13 @@ app.put('/usuarios', (req, res) => {
     // Adding 2 records
     conn.query("INSERT INTO users(username, password) VALUES('user1','pass1')");
     conn.query("INSERT INTO users(username, password) VALUES('user2','pass2')");
-
+    res.send("Records inserted.");
 });
 
 app.delete('/usuarios', (req, res) => {
     // Borrar la base de datos de usuarios
     conn.query("DROP TABLE users");
-    console.log("Users table deleted.");
+    res.send("Users table deleted.");
 });
 
 // Iniciamos nuestro servidor web
