@@ -4,7 +4,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {readFile} = require('fs').promises;
-const {conn, getUserData} = require('./sqlconnector.js');
+const {database, getUserData} = require('./sqlconnector.js');
 const {sendMail} = require('./mailer.js');
 
 // Creamos la aplicación express
@@ -31,7 +31,8 @@ app.post('/', async (req, res) => {
     try {
         let user = req.body.user;
         let pass = req.body.password;
-        conn.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
+        dbConnect();
+        database.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
         res.send( await readFile('./page/index.html', 'utf8') );
     } catch (error) {
         (console.error || console.log).call(console, error.stack || error);
@@ -61,16 +62,15 @@ app.get('/verify', async (req, res) => {
     res.send(`Correo para ${user} en ${email} enviado.`);
 });
 
-app.get('/usuarios', (req, res) => {
+// Temp fix: using a callback to get the data from the DB
+app.get('/usuarios', async (req, res) => {
     // Obtener los datos de todos los usuarios de la BD
-    getUserData((data) => {
-        res.send(JSON.stringify(data));
-    });
+    res.send( JSON.stringify(await getUserData()) );
 });
 
 app.post('/usuarios', (req, res) => {
     // Creating a simple user table with username and password
-    conn.query("CREATE TABLE IF NOT EXISTS users("+
+    database.query("CREATE TABLE IF NOT EXISTS users("+
     "id INT NOT NULL AUTO_INCREMENT,"+
     "PRIMARY KEY(id),"+
     "username VARCHAR(30),"+
@@ -81,16 +81,15 @@ app.post('/usuarios', (req, res) => {
 });
 
 app.put('/usuarios', (req, res) => {
-    
     // Adding 2 records
-    conn.query("INSERT INTO users(username, password) VALUES('user1','pass1')");
-    conn.query("INSERT INTO users(username, password) VALUES('user2','pass2')");
+    database.query("INSERT INTO users(username, password) VALUES('user1','pass1')");
+    database.query("INSERT INTO users(username, password) VALUES('user2','pass2')");
     res.send("Records inserted.");
 });
 
 app.delete('/usuarios', (req, res) => {
     // Borrar la base de datos de usuarios
-    conn.query("DROP TABLE users");
+    database.query("DROP TABLE users");
     res.send("Users table deleted.");
 });
 

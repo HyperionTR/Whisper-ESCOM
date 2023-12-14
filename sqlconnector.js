@@ -1,43 +1,55 @@
 // Conexión a la BD
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const fs = require('fs');
-var config = {
-    host:process.env.AZURE_MYSQL_HOST,
-    user:process.env.AZURE_MYSQL_USER,
-    password:process.env.AZURE_MYSQL_PASSWORD,
-    database:process.env.AZURE_MYSQL_DATABASE,
-    port:process.env.AZURE_MYSQL_PORT,
-    ssl:{ca:fs.readFileSync("DigiCertGlobalRootCA.crt.pem")}
-}
 
-const conn = new mysql.createConnection(config);
-conn.connect(
-    function(err){
-        if(err){
-            console.log("!!! Cannot connect !!! Error:");
-            // Mostrando el mensaje de erorr en casod e queno hala e.stack
-            (console.error || console.log).call(console, err.stack || err);
-        }
-        else{
-            console.log(`Connection with ${config.database} established!.`);
-        }
-    });
+var poolConnConfig = {
+    // Azure MySQL Database authentication
+    host: process.env.AZURE_MYSQL_HOST,
+    user: process.env.AZURE_MYSQL_USER,
+    password: process.env.AZURE_MYSQL_PASSWORD,
+    database: process.env.AZURE_MYSQL_DATABASE,
+    port: process.env.AZURE_MYSQL_PORT,
+    // Azure MySQL Database SSL configuration
+    ssl: {
+        ca: fs.readFileSync("DigiCertGlobalRootCA.crt.pem")
+    },
+    // Connection Pool configuration
+    connectionLimit: 30,
+    queueLimit: 0
+};
+
+// Creamos un connection pool para manejar las peticiones entrantes a la BD
+const pool = mysql.createPool(poolConnConfig);
+
+// Probamos la conexión a la base de datos
+pool.getConnection(function(err, connection) {
+    if (err) {
+        console.error('!!! Cannot connect to database !!!\n' + err.stack);
+        return;
+    }
+    console.log(`Connection with ${poolConnConfig.database} established!.`);
+});
 
 // Function to retrieve all rows from users table
-function getUserData(callback){
-	return conn.query("SELECT * FROM users", function(err,qresults) {
-		if(err) throw err;
-		else {
-			console.log(`Done retrieving ${qresults.length} rows.`);
-			callback({
-				length: qresults.length,
-				results: qresults
-			});
-		}
-	});
+async function getUserData() {
+    // const conn = await pool.getConnection();
+    try {
+        const [rows, fields] = await pool.query("SELECT * FROM users");
+        console.log(`Done retrieving ${rows.length} rows.`);
+        return {
+            length: rows.length,
+            results: rows
+        };
+    } catch (error) {
+        console.error(error);
+    }
+    // finally {
+    //     // ensure the connection is released
+    //     conn.release();
+    // }
 }
 
 module.exports = {
-	conn: conn,
-	getUserData: getUserData
+	database: pool,
+	getUserData: getUserData,
 }
