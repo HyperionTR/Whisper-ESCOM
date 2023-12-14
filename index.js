@@ -31,7 +31,6 @@ app.post('/', async (req, res) => {
     try {
         let user = req.body.user;
         let pass = req.body.password;
-        dbConnect();
         database.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
         res.send( await readFile('./page/index.html', 'utf8') );
     } catch (error) {
