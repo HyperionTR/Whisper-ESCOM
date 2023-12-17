@@ -4,44 +4,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {readFile} = require('fs').promises;
-const fs = require('fs');
-
-// Conexión a la BD
-const mysql = require('mysql2');
-var config = {
-    host:"whisper-escom-server.mysql.database.azure.com",
-    user:"twmopiafgh",
-    password:"Whisper-ESCOM",
-    database:"whisper-escom-database",
-    port:3306,
-    ssl:{ca:fs.readFileSync("DigiCertGlobalRootCA.crt.pem")}
-}
-
-const conn = new mysql.createConnection(config);
-conn.connect(
-    function(err){
-        if(err){
-            console.log("!!! Cannot connect !!! Error:");
-            // Mostrando el mensaje de erorr en casod e queno hala e.stack
-            (console.error || console.log).call(console, err.stack || err);
-        }
-        else{
-            console.log(`Connection with ${config.database} established!.`);
-            // readData();
-        }
-    });
-
-// Function to retrieve all rows from users table
-function readData(){
-    conn.query("SELECT * FROM users",function(err,results,fields){
-        if(err) throw err;
-        else console.log("Selected "+results.length+" rows.");
-        for(i=0;i<results.length;i++){
-            console.log("Row: "+JSON.stringify(results[i]));
-        }
-        console.log("Done.");
-    });
-}
+const {database, getUserData} = require('./sqlconnector.js');
+const {sendMail} = require('./mailer.js');
 
 // Creamos la aplicación express
 const app = express();
@@ -63,42 +27,70 @@ app.get('/', async (req, res) => {
 	}
 });
 
-app.post('/', (req, res) => {
+app.post('/', async (req, res) => {
     try {
         let user = req.body.user;
         let pass = req.body.password;
-        conn.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
+        dbConnect();
+        database.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
+        res.send( await readFile('./page/index.html', 'utf8') );
     } catch (error) {
         (console.error || console.log).call(console, error.stack || error);
+        res.status(404).send('404 Not Found');
     }
 });
 
-app.get('/usuarios', (req, res) => {
-    readData();
+
+app.get('/register', async (req, res) => {
+    // 1. Enviar los datos del usuario a la BD
+    // 2. Enviar un correo de verificación al usuario (con el codigo aleatorio)
+    // 3. Mostrar formulario para ingresar el codigo
+});
+
+app.get('/restablecer', async (req, res) => {
+    // 1. Envia correo de restablecimiento de contraseña (con el codigo aleatorio)
+    // 2. Mostrar formulario para ingresar el codigo
+});
+
+app.get('/verify', async (req, res) => {
+    // Recibir el codigo de verificación
+    // Verificar que el codigo sea correcto
+    // Mandar el usuario a la pagina principal
+    let user = req.body.user;
+    let email = req.body.email;
+    sendMail(user, email);
+    res.send(`Correo para ${user} en ${email} enviado.`);
+});
+
+// Temp fix: using a callback to get the data from the DB
+app.get('/usuarios', async (req, res) => {
+    // Obtener los datos de todos los usuarios de la BD
+    res.send( JSON.stringify(await getUserData()) );
 });
 
 app.post('/usuarios', (req, res) => {
     // Creating a simple user table with username and password
-    conn.query("CREATE TABLE IF NOT EXISTS users("+
+    database.query("CREATE TABLE IF NOT EXISTS users("+
     "id INT NOT NULL AUTO_INCREMENT,"+
     "PRIMARY KEY(id),"+
     "username VARCHAR(30),"+
     "password VARCHAR(30)"+
     ")"
-);
-
+    );
+    res.send("Users table created.");
 });
 
 app.put('/usuarios', (req, res) => {
-    
     // Adding 2 records
-    conn.query("INSERT INTO users(username, password) VALUES('user1','pass1')");
-    conn.query("INSERT INTO users(username, password) VALUES('user2','pass2')");
-
+    database.query("INSERT INTO users(username, password) VALUES('user1','pass1')");
+    database.query("INSERT INTO users(username, password) VALUES('user2','pass2')");
+    res.send("Records inserted.");
 });
 
 app.delete('/usuarios', (req, res) => {
-    res.send('Aqui se eliminara el usuario con id: ' + req.params.id);
+    // Borrar la base de datos de usuarios
+    database.query("DROP TABLE users");
+    res.send("Users table deleted.");
 });
 
 // Iniciamos nuestro servidor web
