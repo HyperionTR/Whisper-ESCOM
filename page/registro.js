@@ -23,7 +23,13 @@ form.addEventListener("submit", function(event){
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({usuario: el_username.value, correo: el_email.value})
-		})
+		}).then(function(response){
+			if(response.status == 409) {
+				alert("Este correo ya está pendiente de verificación.");
+			}
+		}).catch( (error) => {
+			alert("No se pudo conectar con el servidor, " + error);
+		});
 	}
 
 });
@@ -64,13 +70,14 @@ function validarRegistro(username, email, password, confpass, code){
 			'Content-Type': 'application/json'
 		},
 		body: JSON.stringify(user_data)
-	}).then(function(response){
-		if(response.message == "ok"){
+	}).then(async (response) => {
+		let message = await response.text();
+		if(message == "ok"){
 			window.location.href = "/index.html";
-		} else if (response.message == "codigo"){
+		} else if (message == "codigo"){
 			alert("El código de verificación es incorrecto.");
 		} else {
-			alert("Ocurrió un error al registrar el usuario.");
+			alert(message);
 		}
 	}).catch( (error) => {
 		alert("No se pudo conectar con el servidor, " + error);

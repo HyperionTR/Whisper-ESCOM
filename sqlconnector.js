@@ -21,15 +21,6 @@ var poolConnConfig = {
 // Creamos un connection pool para manejar las peticiones entrantes a la BD
 const pool = mysql.createPool(poolConnConfig);
 
-// Probamos la conexión a la base de datos
-pool.getConnection(function(err, connection) {
-    if (err) {
-        console.error('!!! Cannot connect to database !!!\n' + err.stack);
-        return;
-    }
-    console.log(`Connection with ${poolConnConfig.database} established!.`);
-});
-
 // Obtenemos toda la información de los usuarios registrados
 async function getUserData() {
     try {
