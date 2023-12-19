@@ -1,0 +1,35 @@
+/* Coolors Exported Palette - https://coolors.co/a7bfe8-ffa69e-8fd5a6-329f5b-0c8346 */
+
+- Tailwind
+
+{ 'powder_blue': { DEFAULT: '#a7bfe8', 100: '#10223f', 200: '#21437f', 300: '#3165be', 400: '#6790d8', 500: '#a7bfe8', 600: '#b8cbed', 700: '#c9d8f1', 800: '#dbe5f6', 900: '#edf2fa' }, 'melon': { DEFAULT: '#ffa69e', 100: '#530700', 200: '#a50e00', 300: '#f81500', 400: '#ff5a4b', 500: '#ffa69e', 600: '#ffb8b1', 700: '#ffcac5', 800: '#ffdbd8', 900: '#ffedec' }, 'celadon': { DEFAULT: '#8fd5a6', 100: '#14341e', 200: '#27683d', 300: '#3b9b5b', 400: '#5cc17e', 500: '#8fd5a6', 600: '#a6ddb9', 700: '#bce6ca', 800: '#d3eedc', 900: '#e9f7ed' }, 'shamrock_green': { DEFAULT: '#329f5b', 100: '#0a2012', 200: '#144025', 300: '#1e5f37', 400: '#287f49', 500: '#329f5b', 600: '#48c578', 700: '#76d49a', 800: '#a4e2bc', 900: '#d1f1dd' }, 'sea_green': { DEFAULT: '#0c8346', 100: '#021a0e', 200: '#05341c', 300: '#074e2a', 400: '#0a6938', 500: '#0c8346', 600: '#12c669', 700: '#35ec8e', 800: '#79f3b4', 900: '#bcf9d9' } }
+
+- CSV
+
+a7bfe8,ffa69e,8fd5a6,329f5b,0c8346
+
+- With #
+
+#a7bfe8, #ffa69e, #8fd5a6, #329f5b, #0c8346
+
+- Array
+
+["a7bfe8","ffa69e","8fd5a6","329f5b","0c8346"]
+
+- Object
+
+{"Powder blue":"a7bfe8","Melon":"ffa69e","Celadon":"8fd5a6","Shamrock green":"329f5b","Sea green":"0c8346"}
+
+- Extended Array
+
+[{"name":"Powder blue","hex":"a7bfe8","rgb":[167,191,232],"cmyk":[28,18,0,9],"hsb":[218,28,91],"hsl":[218,59,78],"lab":[77,1,-23]},{"name":"Melon","hex":"ffa69e","rgb":[255,166,158],"cmyk":[0,35,38,0],"hsb":[5,38,100],"hsl":[5,100,81],"lab":[77,32,18]},{"name":"Celadon","hex":"8fd5a6","rgb":[143,213,166],"cmyk":[33,0,22,16],"hsb":[140,33,84],"hsl":[140,45,70],"lab":[80,-32,16]},{"name":"Shamrock green","hex":"329f5b","rgb":[50,159,91],"cmyk":[69,0,43,38],"hsb":[143,69,62],"hsl":[143,52,41],"lab":[58,-46,27]},{"name":"Sea green","hex":"0c8346","rgb":[12,131,70],"cmyk":[91,0,47,49],"hsb":[149,91,51],"hsl":[149,83,28],"lab":[48,-45,25]}]
+
+- XML
+
+<palette>
+  <color name="Powder blue" hex="a7bfe8" r="167" g="191" b="232" />
+  <color name="Melon" hex="ffa69e" r="255" g="166" b="158" />
+  <color name="Celadon" hex="8fd5a6" r="143" g="213" b="166" />
+  <color name="Shamrock green" hex="329f5b" r="50" g="159" b="91" />
+  <color name="Sea green" hex="0c8346" r="12" g="131" b="70" />
+</palette>

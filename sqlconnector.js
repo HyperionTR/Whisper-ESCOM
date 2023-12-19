@@ -30,12 +30,11 @@ pool.getConnection(function(err, connection) {
     console.log(`Connection with ${poolConnConfig.database} established!.`);
 });
 
-// Function to retrieve all rows from users table
+// Obtenemos toda la información de los usuarios registrados
 async function getUserData() {
-    // const conn = await pool.getConnection();
     try {
-        const [rows, fields] = await pool.query("SELECT * FROM users");
-        console.log(`Done retrieving ${rows.length} rows.`);
+        const [rows, fields] = await pool.query("SELECT * FROM usuarios");
+        console.log(`Done retrieving ${rows.length} rows from usuarios.`);
         return {
             length: rows.length,
             results: rows
@@ -43,13 +42,54 @@ async function getUserData() {
     } catch (error) {
         console.error(error);
     }
-    // finally {
-    //     // ensure the connection is released
-    //     conn.release();
-    // }
+}
+
+// Obtenemos toda la información de los usuarios por regristrarse
+async function getPendingVerification() {
+    try {
+        const [rows, fields] = await pool.query("SELECT * FROM verificacion_email");
+        console.log(`Done retrieving ${rows.length} rows from verificacion_email.`);
+        return {
+            length: rows.length,
+            results: rows
+        };
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// Obtenemos toda la información de los usuarios que desean cambiar su contraseña
+async function getPendingPasswordReset() {
+    try {
+        const [rows, fields] = await pool.query("SELECT * FROM restablecimiento_password");
+        console.log(`Done retrieving ${rows.length} rows from restablecimiento_password.`);
+        return {
+            length: rows.length,
+            results: rows
+        };
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+// Obtenemos toda la información de las publicaciones
+async function getPublications() {
+    try {
+        const [rows, fields] = await pool.query("SELECT * FROM publicaciones");
+        console.log(`Done retrieving ${rows.length} rows from publicaciones.`);
+        return {
+            length: rows.length,
+            results: rows
+        };
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 module.exports = {
 	database: pool,
 	getUserData: getUserData,
+    getPendingVerification: getPendingVerification,
+	getPendingPasswordReset: getPendingPasswordReset,
+	getPublications: getPublications
 }
