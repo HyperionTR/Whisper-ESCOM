@@ -72,6 +72,8 @@ function validarRegistro(username, email, password, confpass, code){
 		} else {
 			alert("Ocurrió un error al registrar el usuario.");
 		}
+	}).catch( (error) => {
+		alert("No se pudo conectar con el servidor, " + error);
 	});
 
 }

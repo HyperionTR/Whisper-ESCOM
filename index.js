@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const {readFile} = require('fs').promises;
 const {database, getUserData, getPendingVerification, getPendingPasswordReset, getPublications} = require('./sqlconnector.js');
 const {sendMail} = require('./mailer.js');
+const bcrypt = require('bcrypt');
 
 // Creamos la aplicación express
 const app = express();
@@ -49,7 +50,7 @@ app.post('/register', async (req, res) => {
         let code = req.body.codigo;
 
         // Hashing de la contraseña con bcrypt
-        let hash = await bcrypt.hash(pass, saltRounds);
+        let hash = await bcrypt.hash(pass, 10);
 
         // Verificar que el codigo de verificación sea correcto, obteniendolo de la BD
         let verification_code = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
