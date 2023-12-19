@@ -219,3 +219,39 @@ body.is-login{
 		transform:translate(-50%,-50%);
     z-index:5;
 	}
+
+.code {
+  display: none;
+}
+
+.code {
+  transition: transform .3s ease-out;
+  display: block;
+  position: absolute;
+  opacity: 0;
+  transform: scaleY(0);
+  border-color: rgb(12, 131, 70, 0.7) !important;
+  border-width: 2px;
+}
+
+
+.code::-moz-placeholder{
+  font-family:'Josefin Sans', sans-serif;
+  letter-spacing:.1em;
+  font-size:.9rem;
+  color: #0c8346;
+}
+
+.code:-ms-input-placeholder{
+  font-family:'Josefin Sans', sans-serif;
+  letter-spacing:.1em;
+  font-size:.9rem;
+  color: #0c8346;
+}
+
+.code::placeholder{
+  font-family:'Josefin Sans', sans-serif;
+  letter-spacing:.1em;
+  font-size:.9rem;
+  color: #0c8346;
+}

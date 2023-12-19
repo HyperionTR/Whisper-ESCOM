@@ -46,17 +46,23 @@ app.post('/register', async (req, res) => {
         let user = req.body.usuario;
         let email = req.body.correo;
         let pass = req.body.password;
+        let code = req.body.codigo;
 
         // Hashing de la contraseña con bcrypt
-        // WIP
-        
-        // Generar un codigo aleatorio de 8 caracteres para la verificacion
-        let verification_code = Math.random().toString(36).substring(2, 10);
-        
-        // Enviar un correo de verificación al usuario (con el codigo aleatorio)
-        sendMail(user, email, verification_code);
+        let hash = await bcrypt.hash(pass, saltRounds);
 
-        // Mostrar formulario para ingresar el codigo
+        // Verificar que el codigo de verificación sea correcto, obteniendolo de la BD
+        let verification_code = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
+
+        if (verification_code == code) {
+            // Si el codigo de verificación es correcto, se registra al usuario en la BD
+            await database.query("INSERT INTO usuarios(usuario, correo, password) VALUES(?, ?, ?)", [user, email, hash]);
+            res.send({message: "ok"});
+        } else {
+            // Si el codigo de verificación es incorrecto, se envia un mensaje de error
+            res.send({message: "codigo"});
+        }
+
     } catch (error) {
         (console.error || console.log).call(console, error.stack || error);
         res.status(500).send('No se ingresaron los datos correctamente.');
@@ -69,14 +75,24 @@ app.post('/restablecer', async (req, res) => {
 });
 
 app.post('/verify', async (req, res) => {
-    // Recibir el codigo de verificación
-    // Verificar que el codigo sea correcto
-    // Mandar el usuario a la pagina principal
-    let user = req.body.user;
-    let email = req.body.email;
-    let code = req.body.code;
-    sendMail(user, email, code);
-    res.send(`Correo para ${user} en ${email} enviado con código ${code}.`);
+    
+    try {
+        // Recibir los datos para la verificación del correo
+        let email = req.body.correo;
+        let user = req.body.usuario;
+        // Generar un codigo aleatorio de 8 caracteres para la verificacion
+        let verification_code = Math.random().toString(36).substring(2, 10);
+        
+        // Guardar el codigo de verificación en la BD con un statement preparadoS
+        await database.query("INSERT INTO verificacion_email(correo, codigo_verificacion) VALUES(?, ?)", [email, verification_code]);
+        
+        // Enviar un correo de verificación al usuario (con el codigo aleatorio)
+        sendMail(user, email, verification_code);
+    } catch (verify_error) {
+        (console.error || console.log).call(console, "Error al verificar el correo:" + verify_error.stack || "Error al verificar el correo" + verify_error);
+        res.send("Error al verificar el correo: " + verify_error);
+    }
+
 });
 
 // RUTAS PARA DESARROLLO Y VERTIFICACION DE LA BD, BORRAR EN PRODUCCION
@@ -119,7 +135,7 @@ app.put("/db", async (req, res) => {
     "correo VARCHAR(255) NOT NULL,"+
     "codigo_verificacion VARCHAR(8) NOT NULL,"+
     // Especificación de las llaves
-    "PRIMARY KEY(id_verificacion),"+
+    "PRIMARY KEY(id_verificacion)"+
     ")";
 
     let password_reset_table_query = "CREATE TABLE IF NOT EXISTS restablecimiento_password("+
@@ -168,17 +184,18 @@ app.delete('/db', async (req, res) => {
     // Borrar cada una de las tablas de la BD
     try {
 
-        database.query("DROP TABLE usuarios");
-        res.write("Tabla de usuarios eliminada.\n");
-        
-        database.query("DROP TABLE verificacion_email");
+        await database.query("DROP TABLE verificacion_email");
         res.write("Tabla de verificación de correo eliminada.\n");
         
-        database.query("DROP TABLE restablecimiento_password");
+        await database.query("DROP TABLE restablecimiento_password");
         res.write("Tabla de restablecimiento de contraseña eliminada.\n");
         
-        database.query("DROP TABLE publicaciones");
+        await database.query("DROP TABLE publicaciones");
         res.end("Tabla de publicaciones eliminada.");
+
+        await database.query("DROP TABLE usuarios");
+        res.write("Tabla de usuarios eliminada.\n");
+
     } catch (db_error) {
         res.send("Error al borrar la base de datos: " + db_error);
     }
