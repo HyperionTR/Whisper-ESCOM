@@ -183,7 +183,7 @@ body{
 			background-color:#fff;
 			color:#0c8346 !important;
 			font-weight:bold;
-			border:2px solid rgba(167,191,232,.25);
+			border:2px solid rgba(163, 238, 156, 0.8);
 		}
 .card--login .btn:focus{
       box-shadow:0 0 0 0.2rem rgba(167,191,232,.25);
