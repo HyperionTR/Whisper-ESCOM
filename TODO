@@ -1,3 +1,33 @@
 Implementar sesiones con express-session
 https://www.npmjs.com/package/express-session
 https://www.npmjs.com/package/express-mysql-session
+
+
+Manejar los errores de duplicate key de mejor manera en las tablas de usuario y verificación
+
+log:
+
+2023-12-25T06:59:50.281025739Z Error: Duplicate entry 'Einhänder' for key 'usuarios.usuario'
+2023-12-25T06:59:50.281104546Z     at PromisePool.query (/home/site/wwwroot/node_modules/mysql2/promise.js:356:22)
+2023-12-25T06:59:50.281111746Z     at /home/site/wwwroot/index.js:66:28
+2023-12-25T06:59:50.281116947Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+2023-12-25T07:01:23  No new trace in the past 1 min(s).
+2023-12-25T07:02:23  No new trace in the past 2 min(s).
+2023-12-25T07:02:41.711730881Z Error: Duplicate entry 'Einhänder' for key 'usuarios.usuario'
+2023-12-25T07:02:41.711809088Z     at PromisePool.query (/home/site/wwwroot/node_modules/mysql2/promise.js:356:22)
+2023-12-25T07:02:41.711817989Z     at /home/site/wwwroot/index.js:66:28
+2023-12-25T07:02:41.711824390Z     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+→ Solucionar el problema de no poder abrir el archivo
+
+2023-12-25T06:57:31.042714164Z [Error: ENOENT: no such file or directory, open './html/verification-mail.html'] {
+2023-12-25T06:57:31.042756568Z   errno: -2,
+2023-12-25T06:57:31.042763168Z   code: 'ENOENT',
+2023-12-25T06:57:31.042768469Z   syscall: 'open',
+2023-12-25T06:57:31.042773169Z   path: './html/verification-mail.html'
+2023-12-25T06:57:31.042778070Z }
+
+Otro error de llave duplicada
+
+2023-12-25T06:58:36.126801058Z Error al verificar el correo:Error: Duplicate entry 'emmanuel.ale.h.v@gmail.com' for key 'verificacion_email.correo'

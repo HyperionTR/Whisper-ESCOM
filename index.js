@@ -4,8 +4,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {readFile} = require('fs').promises;
-const {database, getUserData, getPendingVerification, getPendingPasswordReset, getPublications} = require('./sqlconnector.js');
-const {sendMail} = require('./mailer.js');
+const {
+    database,
+    getUserData,
+    getPendingVerification,
+    getPendingPasswordReset,
+    getPublications
+    } = require('./js/sqlconnector.js');
+const {sendVerifyMail: sendVerifyMail} = require('./js/mailer.js');
 const bcrypt = require('bcrypt');
 
 // Creamos la aplicación express
@@ -14,7 +20,7 @@ const app = express();
 // Configuramos bodyParser para que convierta el body de nuestras peticiones a JSON
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(express.static("page"));
+app.use(express.static("webpage"));
 
 // Definimos el puerto por defecto
 const port = process.env.PORT || 8080;
@@ -22,7 +28,7 @@ const port = process.env.PORT || 8080;
 // Definimos las rutas de nuestro servidor web
 app.get('/', async (req, res) => {
     try {
-		res.send( await readFile('./page/index.html', 'utf8') );
+		res.send( await readFile('./webpage/index.html', 'utf8') );
 	} catch (error) {
 		res.status(404).send('404 Not Found');
 	}
@@ -33,7 +39,7 @@ app.post('/', async (req, res) => {
         let user = req.body.user;
         let pass = req.body.password;
         database.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
-        res.send( await readFile('./page/index.html', 'utf8') );
+        res.send( await readFile('./webpage/index.html', 'utf8') );
     } catch (error) {
         (console.error || console.log).call(console, error.stack || error);
         res.status(404).send('404 Not Found');
@@ -49,25 +55,46 @@ app.post('/register', async (req, res) => {
         let pass = req.body.password;
         let code = req.body.codigo;
 
-        // Hashing de la contraseña con bcrypt
-        let hash = await bcrypt.hash(pass, 10);
+        // Primero, para evitar que se quieran registrar accediendo a esta ruta directamente, vamos a verificar 
+        // que no halla duplicidad de datos en la BD
+
+        try {
+            // Antes de iniciar, verificamos si el usuario ya está registrado
+            let [rows, ] = await database.query("SELECT * FROM usuarios WHERE correo = ?", [email]);
+            if (rows.length > 0) {
+                // Si el usuario o correo ya están registrados, se envia el codigo y el mensaje adecuado
+                if (rows[0].usuario === user) {
+                    res.status(409).send("El nombre de usuario ya ha sido registrado.");
+                } else if (rows[0].correo === email) {
+                    res.status(409).send("Este correo ya está registrado.");
+                }
+                return;
+            }
+    
+        } catch (db_error) {
+            (console.error || console.log).call(console, "Error al verificar el correo ---\n" + db_error.stack || "Error al verificar el correo" + db_error);
+        }
 
         // Verificar que el codigo de verificación sea correcto, obteniendolo de la BD
         let [rows, ] = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
 
-        if (rows[0].codigo_verificacion === code) {
+        if (rows.length === 0) {
+            res.status(409).send("Todavía no se ha generado un código de verificación para este correo.");
+        } else if (rows[0].codigo_verificacion === code) {
+            // Hashing de la contraseña con bcrypt
+            let hash = await bcrypt.hash(pass, 10);
+            
             // Si el codigo de verificación es correcto, se registra al usuario en la BD
             await database.query("INSERT INTO usuarios(usuario, correo, password) VALUES(?, ?, ?)", [user, email, hash]);
-            res.send("ok");
+            res.sendStatus(200);
 
             // Y se elimina el codigo de verificación de la BD
             database.query("DELETE FROM verificacion_email WHERE correo = ?", [email]);
-
         } else {
-            // Si el codigo de verificación es incorrecto, se envia un mensaje de error
-            res.send("codigo");
+            // Si el codigo de verificación es incorrecto, se envia el codigo
+            // 409 que significa "conflicto con el estado actual del servidor"
+            res.status(409).send("El código de verificación es incorrecto.");
         }
-
     } catch (error) {
         (console.error || console.log).call(console, error.stack || error);
         res.status(500).send('No se ingresaron los datos correctamente.');
@@ -81,31 +108,76 @@ app.post('/restablecer', async (req, res) => {
 
 app.post('/verify', async (req, res) => {
     
+    // Recibir los datos para la verificación del correo
+    let email = req.body.correo;
+    let user = req.body.usuario;
+    
     try {
-        // Recibir los datos para la verificación del correo
-        let email = req.body.correo;
-        let user = req.body.usuario;
-        // Generar un codigo aleatorio de 8 caracteres para la verificacion
-        let verification_code = Math.random().toString(36).substring(2, 10);
-        
-        // Guardar el codigo de verificación en la BD con un statement preparadoS
-        let [rows, ] = await database.query("INSERT INTO verificacion_email(correo, codigo_verificacion) VALUES(?, ?)", [email, verification_code]);
-        
-        if (rows.affectedRows == 0) {
-            // Si no se pudo guardar el codigo de verificación es que ya existe un codigo de verificación
-            res.status(409).send("Ya existe un código de verificación para este correo.");
+        // Antes de iniciar, verificamos si el usuario ya está registrado
+        let [rows, ] = await database.query("SELECT * FROM usuarios WHERE correo = ? OR usuario = ?", [email, user]);
+        if (rows.length > 0) {
+            // Si el usuario o correo ya están registrados, se envia el codigo y el mensaje adecuado
+            if (rows[0].usuario === user) {
+                res.status(409).send("El nombre de usuario ya ha sido registrado.");
+            } else if (rows[0].correo === email) {
+                res.status(409).send("Este correo ya está registrado.");
+            }
             return;
         }
 
+    } catch (db_error) {
+        (console.error || console.log).call(console, "Error al verificar el correo ---\n" + db_error.stack || "Error al verificar el correo" + db_error);
+    }
+    
+    // Generar un codigo aleatorio de 8 caracteres para la verificacion
+    let verification_code = Math.random().toString(36).substring(2, 10);
+    
+    try {
+    // Guardar el codigo de verificación en la BD con un statement preparado
+    // Nota: La sintaxis [rows, ] ignora el segundo parametro de la respuesta de la BD
+        let [rows, ] = await database.query("INSERT INTO verificacion_email(correo, codigo_verificacion) VALUES(?, ?)", [email, verification_code]);
+        
         // Enviar un correo de verificación al usuario (con el codigo aleatorio)
-        sendMail(user, email, verification_code);
+        sendVerifyMail(user, email, verification_code);
 
         res.status(200).send("Correo de verificación enviado.");
     } catch (verify_error) {
-        (console.error || console.log).call(console, "Error al verificar el correo:" + verify_error.stack || "Error al verificar el correo" + verify_error);
-        res.status(500).send("Error al verificar el correo: " + verify_error);
+        // verificamos que si el codigo de error es de duplicidad, se envie el codigo 409
+        if (verify_error.code === "ER_DUP_ENTRY") {
+            res.status(200).send("Ya existe un código de verificación para este correo.");
+
+            // Obtenemos dicho codigo duplicado
+            let [rows, ] = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
+            let verification_code = rows[0].codigo_verificacion;
+
+            sendVerifyMail(user, email, verification_code);
+        } else {
+            (console.error || console.log).call(console, "Error al verificar el correo ---\n" + verify_error.stack || "Error al verificar el correo" + verify_error);
+            res.status(500).send("Error al verificar el correo: " + verify_error);
+        }
     }
 
+});
+
+app.post('/resend', async (req, res) => {
+    // Obtenemos el correo al que se reenviara el correo de verificación
+    let email = req.body.correo;
+    let username = req.body.usuario;
+
+    try {// Generamos un nuevo codigo de verificación    
+        // Obtenemos el codigo de verificación de la BD
+        let [rows, ] = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
+        let verification_code = rows[0].codigo_verificacion;
+
+        // Enviamos el correo de verificación
+        sendVerifyMail(username, email, verification_code);
+        res.sendStatus(200);
+    } catch (db_error) {
+        // Vemos si el error es que no existe el codigo de verificación en la BD
+        if (db_error.code === "ER_NO_SUCH_TABLE") {
+            res.status(500).send("No existe el codigo de verificación en la BD");
+        }
+    }
 });
 
 // RUTAS PARA DESARROLLO Y VERTIFICACION DE LA BD, BORRAR EN PRODUCCION
@@ -133,13 +205,15 @@ app.get('/db', async (req, res) => {
 
 app.put("/db", async (req, res) => {
     let user_table_query = "CREATE TABLE IF NOT EXISTS usuarios("+
-    // Campos de la tabla
+    // Campos de la tabla REQUIERE UNIQUE
     "id_usuario INT NOT NULL AUTO_INCREMENT,"+
     "usuario VARCHAR(255) NOT NULL,"+
     "correo VARCHAR(255) NOT NULL,"+
     "password VARCHAR(72) NOT NULL,"+
     // Especificación de las llaves
-    "PRIMARY KEY(id_usuario)"+
+    "PRIMARY KEY(id_usuario),"+
+    "UNIQUE KEY(usuario),"+
+    "UNIQUE KEY(correo)"+
     ")";
 
     let verification_email_table_query = "CREATE TABLE IF NOT EXISTS verificacion_email("+
@@ -160,7 +234,7 @@ app.put("/db", async (req, res) => {
     // Especificación de las llaves
     "PRIMARY KEY(id_restablecimiento),"+
     "FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario),"+
-    "UNIQUE KEY(id_usuario)"
+    "UNIQUE KEY(id_usuario)"+
     ")";
 
     let publicaciones_table_query = "CREATE TABLE IF NOT EXISTS publicaciones("+
@@ -206,7 +280,7 @@ app.delete('/db', async (req, res) => {
         res.write("Tabla de restablecimiento de contraseña eliminada.\n");
         
         await database.query("DROP TABLE publicaciones");
-        res.write("Tabla de publicaciones eliminada.");
+        res.write("Tabla de publicaciones eliminada.\n");
 
         await database.query("DROP TABLE usuarios");
         res.end("Tabla de usuarios eliminada.\n");
