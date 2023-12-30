@@ -221,15 +221,17 @@ body.is-login{
 	}
 
 .code {
-  transition: transform .3s ease-out;
-  display: block;
-  position: absolute;
-  opacity: 0;
-  transform: scaleY(0);
   border-color: rgb(12, 131, 70, 0.7) !important;
   border-width: 2px;
 }
 
+.hidden-input {
+  transition: all .3s ease-out, transform 0.4s ease-out, opacity 0s;
+  display: inline-block;
+  position: absolute;
+  opacity: 0;
+  transform: scaleY(0);
+}
 
 .code::-moz-placeholder{
   font-family:'Josefin Sans', sans-serif;
@@ -261,5 +263,16 @@ body.is-login{
   margin-bottom: 0.25rem;
   transition: opacity 0.3s ease-in;
   font-family: 'Josefin Sans', sans-serif;
+}
 
+a.link {
+  color: #0c8346 !important;
+  transition: color 0.3s ease-in;
+  font-family: 'Josefin Sans', sans-serif;
+  text-decoration: underline !important;
+  cursor: pointer;
+}
+
+a.link:hover {
+  color: #4dd481;
 }

@@ -34,19 +34,6 @@ app.get('/', async (req, res) => {
 	}
 });
 
-app.post('/', async (req, res) => {
-    try {
-        let user = req.body.user;
-        let pass = req.body.password;
-        database.query(`INSERT INTO users(username, password) VALUES('${user}','${pass}')`);
-        res.send( await readFile('./webpage/index.html', 'utf8') );
-    } catch (error) {
-        (console.error || console.log).call(console, error.stack || error);
-        res.status(404).send('404 Not Found');
-    }
-});
-
-
 app.post('/register', async (req, res) => {
     try {
         // Obtención de los datos de la petición JSON
@@ -99,11 +86,6 @@ app.post('/register', async (req, res) => {
         (console.error || console.log).call(console, error.stack || error);
         res.status(500).send('No se ingresaron los datos correctamente.');
     }
-});
-
-app.post('/restablecer', async (req, res) => {
-    // 1. Envia correo de restablecimiento de contraseña (con el codigo aleatorio)
-    // 2. Mostrar formulario para ingresar el codigo
 });
 
 app.post('/verify', async (req, res) => {
@@ -159,12 +141,15 @@ app.post('/verify', async (req, res) => {
 
 });
 
+/**
+ * Reenvia el correo de verificación o reestablecimiento al correo especificado
+ */
 app.post('/resend', async (req, res) => {
-    // Obtenemos el correo al que se reenviara el correo de verificación
+    // Obtenemos el correo al que se reenviara el correo
     let email = req.body.correo;
     let username = req.body.usuario;
 
-    try {// Generamos un nuevo codigo de verificación    
+    try {
         // Obtenemos el codigo de verificación de la BD
         let [rows, ] = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
         let verification_code = rows[0].codigo_verificacion;
@@ -179,6 +164,49 @@ app.post('/resend', async (req, res) => {
         }
     }
 });
+
+app.post('/login', async (req, res) => {
+    // Obtenemos los datos de la petición JSON
+    let user_or_email = req.body.email;
+    let pass = req.body.password;
+
+    try {
+        // Obtenemos los datos del usuario de la BD
+        let [rows, ] = await database.query("SELECT * FROM usuarios WHERE usuario = ? OR correo = ?", [user_or_email, user_or_email]);
+        if (rows.length === 0) {
+            res.status(404).send("Esta cuenta no existe.");
+            return;
+        }
+
+        // Verificamos que la contraseña sea correcta
+        let match = await bcrypt.compare(pass, rows[0].password);
+        if (match) {
+            res.send("Inicio correcto.");
+        } else {
+            res.status(401).send("Contraseña incorrecta.");
+        }
+    } catch (db_error) {
+        (console.error || console.log).call(console, "Error al verificar el correo ---\n" + db_error.stack || "Error al verificar el correo" + db_error);
+        res.status(500).send("Error al verificar el correo: " + db_error);
+    }
+});
+
+/**
+ * Añade una nueva entrada en la tabla de restablecimiento de contraseña con un código de reestablecimiento
+ * y envía un correo al usuario con el código
+ */
+app.post('/forgot', async (req, res) => {
+    // Este será un proceso similar al de registro, con su codigo de verificación y reestablecimiento de contraseña
+    res.send(200);
+});
+
+/**
+ * Modifica la contraseña del usuario con la nueva contraseña especificada
+ * verificando que el código de reestablecimiento sea correcto
+ */
+app.post('/reset', async (req, res) => {
+});
+
 
 // RUTAS PARA DESARROLLO Y VERTIFICACION DE LA BD, BORRAR EN PRODUCCION
 app.get('/db', async (req, res) => {

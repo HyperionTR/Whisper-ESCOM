@@ -3,6 +3,8 @@
 // import {htmx} from './htmx.min.js';
 
 let form = document.querySelector("[name='form-registro']");
+let ask_for_code = false;
+
 
 // Manejamos los errores de la petición HTMX
 htmx.on("htmx:responseError", (event) => {
@@ -17,15 +19,14 @@ htmx.on("htmx:responseError", (event) => {
 		return;
 	}
 
-	// Manejador para el botón de login
+	// Manejador del botón de inicio de sesión
+	// Colocamos el mensaje de error del servidor en el span adecuado
 	if(element.id == "btn-login"){
-		if(status == 401){
-			alert("Usuario o contraseña incorrectos.");
-		} else {
-			alert("No se pudo conectar con el servidor, " + xhr.statusText);
-		}
+		console.log("Respuesta: " + xhr.response);
+		event.detail.target.innerHTML = xhr.response;
 		return;
 	}
+
 });
 
 // Mostramos los mensajes de éxito para las peticiones HTMX
@@ -35,6 +36,13 @@ htmx.on("htmx:afterOnLoad", (event) => {
 	if(element.id == "btn-reenviar") {
 		alert("Se ha reenviado el código de verificación.");
 	}
+
+	if(element.id == "btn-login") {
+		// Cambiamos de página a whisper.html
+		if (event.detail.xhr.status == 200)
+			window.location.href = "/whisper.html";
+	}
+
 });
 
 form.addEventListener("submit", function(event){
@@ -46,9 +54,7 @@ form.addEventListener("submit", function(event){
 	let el_confpass = event.currentTarget.conf_pass;
 	let el_code = event.currentTarget.code;
 
-	let codeIsShown = document.querySelector(".code").style.opacity == "1";
-
-	if (codeIsShown){
+	if (ask_for_code){
 		validarRegistro(el_username, el_email, el_password, el_confpass, el_code);
 		return;
 	} else {
@@ -63,7 +69,8 @@ form.addEventListener("submit", function(event){
 			if(response.status == 409) {
 				alert(await response.text());
 			} else if(response.status == 200) {
-				cssMostrarCodigo();
+				cssMostrarInput();
+				ask_for_code = true;
 			}
 		}).catch( (error) => {
 			alert(error);
@@ -71,16 +78,6 @@ form.addEventListener("submit", function(event){
 	}
 
 });
-
-function cssMostrarCodigo(){
-	let codigo = document.querySelectorAll(".code");
-	codigo.forEach(function(element){ 
-		element.style.transform = "scaleY(1)";
-		element.style.opacity = "1";
-		element.style.position = "relative";
-		element.style.display = "inline-block";
-	});
-}
 
 function validarRegistro(username, email, password, confpass, code){
 

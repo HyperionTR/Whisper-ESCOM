@@ -28,3 +28,43 @@ function view_change(next) {
   cards.forEach(card => {card.classList.remove('is-show');});
   next.classList.add('is-show');
 }
+
+function cssMostrarInput(){
+	let codigo = document.querySelectorAll(".hidden-input");
+	codigo.forEach(function(element){ 
+		element.style.transform = "scaleY(1)";
+		element.style.opacity = "1";
+		element.style.position = "relative";
+		element.style.display = "inline-block";
+	});
+}
+
+function cssOcultarInput(){
+	let codigo = document.querySelectorAll(".hidden-input");
+	codigo.forEach(function(element){ 
+		element.style.transform = "scaleY(0)";
+		element.style.opacity = "0";
+		element.style.position = "absolute";
+		element.style.display = "inline-block";
+	});
+}
+
+function cssOcultarEnlace(){
+	let enlace = document.querySelectorAll(".lnk-forgot");
+	enlace.forEach(function(element){ 
+		element.style.transform = "scaleY(0)";
+		element.style.opacity = "0";
+		element.style.position = "absolute";
+		element.style.display = "inline-block";
+	});
+}
+
+function cssMostrarEnlace(){
+	let enlace = document.querySelectorAll(".lnk-forgot");
+	enlace.forEach(function(element){ 
+		element.style.transform = "scaleY(1)";
+		element.style.opacity = "1";
+		element.style.position = "relative";
+		element.style.display = "inline-block";
+	});
+}

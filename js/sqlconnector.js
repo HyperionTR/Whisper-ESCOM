@@ -10,9 +10,9 @@ var poolConnConfig = {
     database: process.env.AZURE_MYSQL_DATABASE || "whisper_escom_database",
     port: process.env.AZURE_MYSQL_PORT || 3306,
     // Azure MySQL Database SSL configuration
-    ssl: {
-        ca: fs.readFileSync("DigiCertGlobalRootCA.crt.pem")
-    },
+    // ssl: {
+    //     ca: fs.readFileSync("DigiCertGlobalRootCA.crt.pem")
+    // },
     // Connection Pool configuration
     connectionLimit: 30,
     queueLimit: 0

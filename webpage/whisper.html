@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Whisper-ESCOM</title>
+	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css'>
+	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css'>
+	<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Handlee|Josefin+Sans:300,600&amp;display=swap'>
+  
+	<script src="./js/htmx.min.js" defer></script>
+
+</head>
+<body style="background-color: cadetblue;">
+	<nav>
+		<!-- Botones de sesión, verificación de firma, etc -->
+	</nav>
+	<section id="publicaciones">
+		
+		<div id="publicacion-propia">
+			<textarea name="whisper-propio" id="whisper-propio" cols="30" rows="10"></textarea>
+			<!-- El botón de whisper, tiene funcionalidad HTMX para enviar el whisper a la BD y recargar las publicaciones -->
+			
+			<button id="btn-publicar"
+				class="btn btn-lg btn-register"
+				hx-get="https://hub.dummyapis.com/delay?seconds=3"
+				hx-target="div#publicaciones"
+				hx-trigger="click"
+				hx-swap="afterbegin"
+				hx-confirm="¿Estás seguro de publicar esto?"
+				hx-include="[name=whisper-propio]"
+				hx-indicator="#dots"
+			>Whisper</button>
+			<img id="dots" class="htmx-indicator" src="./img/rings.svg" alt="Cargando...">
+		</div>
+
+		<div id="publicaciones">
+			<textarea name="whisper" cols="30" rows="10" readonly>
+				Esto es una publicación
+			</textarea>
+			<textarea name="whisper" cols="30" rows="10" readonly>
+				Esto es otra
+			</textarea>
+		</div>
+	</section>
+	<footer>
+		Whisper-ESCOM® 2023
+	</footer>
+</body>
+</html>

@@ -12,6 +12,7 @@
   <script src="./js/htmx.min.js" defer></script>
   <script  src="./js/script.js" defer></script>
   <script src="./js/registro.js" defer></script>
+  <script src="./js/login.js" defer></script>
 </head>
 <body>
 <!-- partial:index.partial.html -->
@@ -62,8 +63,8 @@
             />
           </div>
           <div class="form-group">
-            <p class="card-text code">Ingresa el código de verificación <br/> que te enviamos a tu correo electrónico</p>
-            <input class="form-control code" name="code" type="text" placeholder="Código de verificación"/>
+            <p class="card-text hidden-input">Ingresa el código de verificación <br/> que te enviamos a tu correo electrónico</p>
+            <input class="form-control hidden-input code" name="code" type="text" placeholder="Código de verificación"/>
           </div>
           <input
             id="btn-crear-cuenta"
@@ -75,7 +76,7 @@
             id="btn-reenviar"
             type="button"
             value="REENVIAR"
-            class="btn btn-lg code"
+            class="btn btn-lg hidden-input"
             hx-trigger="click"
             hx-post="/resend"
             hx-swap="none"
@@ -89,28 +90,78 @@
           </div>
         </form>
       </div>
-      <button class="btn btn-back js-btn" data-target="welcome"><i class="fas fa-angle-left"></i></button>
+      <button class="btn btn-back js-btn" data-target="welcome" onclick="ask_for_code = false; cssOcultarCodigo();"><i class="fas fa-angle-left"></i></button>
     </div>
     <div class="card border-0 shadow card--login" id="login">
       <div class="card-body">
-        <h2 class="card-title">¡Hola de nuevo!</h2>
-        <p>Por favor, ingresa tus datos de inicio de sesión</p>
+        <h2 class="card-title lnk-forgot">¡Hola de nuevo!</h2>
+        <h2 class="card-title hidden-input">Reestableciendo <br> contraseña</h2>
+        <p class="lnk-forgot">Por favor, ingresa tus datos de inicio de sesión</p>
         <!-- Usaremos HTMX en lugar de action y method para contactar con /login -->
         <form name="form-login">
-          <div class="form-group">
-            <input class="form-control" type="email" placeholder="Email" required="required"/>
+          <div class="form-group lnk-forgot">
+            <input class="form-control" name="email" type="email" placeholder="Usuario o Email" required="required"/>
           </div>
-          <div class="form-group">
-            <input class="form-control" type="password" placeholder="Contraseña" required="required"/>
+          <div class="form-group lnk-forgot">
+            <input class="form-control" name="password" type="password" placeholder="Contraseña" required="required"/>
           </div>
-          <p><a>¿Olvidaste tu contraseña?</a></p>
-          <button class="btn btn-lg"
+          <p>
+            <a
+              id="lnk-forgot"
+              class="link lnk-forgot"
+              hx-get="/forgot"
+              hx-confirm="Se enviará un correo para restablecer tu contraseña, ¿estás seguro?"
+              hx-swap="none"
+              hx-trigger="click"
+              hx-params="email"
+            >¿Olvidaste tu contraseña?</a>
+          </p>
+          <p class="hidden-input">
+            Escribe una nueva contraseña para <br> sustituír la anterior
+          </p>
+          <div class="form-group hidden-input">
+            <input 
+              class="form-control"
+              name="res-password" 
+              type="password" 
+              placeholder="Contraseña" 
+              required="required"
+              pattern="(?=.*\d)(?=.*[!@#$%^&*])\S{6,}"
+              oninvalid="this.setCustomValidity('La contraseña debe contener al menos 6 caracteres, un número y un caracter especial')"
+              oninput="this.setCustomValidity('')"
+            />
+          </div>
+          <div class="form-group hidden-input">
+            <input
+              class="form-control"
+              name="res-conf_pass" 
+              type="password" 
+              placeholder="Repite la contraseña" 
+              required="required"
+              oninput="this.setCustomValidity('')"
+            />
+          </div>
+          <div class="form-group hidden-input">
+            <p class="card-text">Para confirmar el reestablecimiento <br> ingresa el código enviado a tu correo electrónico. </p>
+            <input class="form-control code" name="res-code" type="text" placeholder="Código de verificación" required="required"/>
+          </div>
+          <button class="btn btn-lg lnk-forgot" style="transition: all .3s, transform 0s;"
             id="btn-login"
             hx-trigger = "click"
-            hx-get = "./test.html"
-            hx-swap = "innerHTML"
+            hx-post = "/login"
+            hx-swap = "none"
             hx-target = "#login-error"
           >INICIAR SESIÓN</button>
+          <!-- Colocamos los 3 parametros aunque solo se utilicen 2, para poder 
+          utilizarlos en JS medainte el evento htmx:beforeRequest -->
+          <button class="btn btn-lg hidden-input"
+            id="btn-reset"
+            class="lnk-forgot"
+            hx-post="/reset"
+            hx-swap="outerHTML"
+            hx-trigger="click"
+            hx-params="res-password, res-code, res-conf_pass"
+          > REESTABLECER </button>
           <div class="form-group">
             <span id="login-error" class="error">
               
@@ -119,7 +170,7 @@
           </div>
         </form>
       </div>
-      <button class="btn btn-back js-btn" data-target="welcome"><i class="fas fa-angle-left"></i></button>
+      <button onclick="cssOcultarInput();cssMostrarEnlace();" class="btn btn-back js-btn" data-target="welcome"><i class="fas fa-angle-left"></i></button>
     </div>
   </div>
 </div>
