@@ -1,0 +1,117 @@
+<html>
+<head>
+	
+</head>
+	<body>
+		<style>
+		* {
+		box-sizing: border-box;
+		}
+
+		body {
+		background-color: #fafafa;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		}
+
+		 .c-email {
+		width: 40vw;
+		overflow: hidden;
+		border-style: solid;
+		border-width: 0.2vw;
+		border-color: brown;
+		}
+		 .c-email__header {
+		background-color: tomato;
+		width: 100%;
+		height: 4.8vw;
+		}
+		 .c-email__header__title {
+		font-size: 1.8vw;
+		font-family: "Open Sans", "Verdana", sans-serif;
+		height: 4.8vw;
+		line-height: 4.8vw;
+		margin: 0;
+		text-align: center;
+		color: white;
+		}
+		 .c-email__content {
+		width: 100%;
+		height: 25vw;
+		display: box;
+		background-color: #fff;
+		padding: 2vw;
+		}
+		 .c-email__content__text {
+		font-size: 1.6vw;
+		text-align: center;
+		color: #343434;
+		margin-top: 0;
+		}
+		 .c-email__code {
+		display: block;
+		width: 65%;
+		height: fit-content;
+		margin: 3vw auto;
+		background-color: #ddd;
+		color: #343434;
+		border-radius: 40px;
+		padding: 2.1vw;
+		text-align: center;
+		font-size: 2.7vw;
+		font-family: "Courier New", monospace;
+		letter-spacing: 0.5vw;
+		overflow-x: auto;
+		box-shadow: 0px 7px 22px 0px rgba(0, 0, 0, 0.1);
+		}
+		 .c-email__footer {
+		width: 100%;
+		height: 12vh;
+		background-color: #fff;
+		margin-top: 0;
+		}
+
+		 .text-title {
+		font-family: "Open Sans", "Verdana", sans-serif;
+		}
+
+		 .text-center {
+		text-align: center;
+		}
+
+		 .text-italic {
+		font-style: italic;
+		}
+
+		 .opacity-30 {
+		opacity: 0.3;
+		}
+
+		 .mb-0 {
+		margin-bottom: 0;
+		}
+	</style>
+		<div class="c-email">
+			<div class="c-email__header">
+				<h1 class="c-email__header__title">Whisper-ESCOM</h1>
+			</div>
+			<div class="c-email__content">
+				<h3 id="user" class="c-email__content__text text-title">Usuario</h3>
+				<p class="c-email__content__text text-title" id = "user-greeting">
+					¿Has solicitado un cambio de contraseña?
+				</p>
+				<p class="c-email__content__text text-title">
+					De ser así, aquí está tu código para verificar tu identidad:
+				</p>
+				<div class="c-email__code">
+					<span class="c-email__code__text" id = "verification-code">12345678</span>
+				</div>
+				
+			</div>
+		<div class="c-email__footer">
+			<p class="c-email__content__text text-center text-italic text-title mb-0">© 2023 Whisper-ESCOM</p>
+		</div>
+		</div>
+	</body>
+</html>

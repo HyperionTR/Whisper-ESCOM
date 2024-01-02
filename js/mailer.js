@@ -9,6 +9,7 @@ const emailClient = new EmailClient(connectionString);
 
 // Paths
 let verification_mail_path = path.resolve(__dirname, './html/verification-mail.html');
+let recovery_mail_path = path.resolve(__dirname, './html/recovery-mail.html');
 
 async function sendVerifyMail(username, email, verification_code) {
 	try {
@@ -51,7 +52,45 @@ async function sendVerifyMail(username, email, verification_code) {
     }   
 }
 
+
+// https://www.lennyfacecopypaste.com/text-symbols/line.html
+
 async function sendRecoveryMail(username, email, recovery_code) {
+    try {
+
+        // Leemos el archivo html del correo electrónico
+        const html_mail = await readFile(recovery_mail_path, 'utf8').then((data) => {
+            // Modificamos el correo mediante JSDOM
+            const dom = new JSDOM(data);
+            const document = dom.window.document;
+
+            // Cambiando el nombre del usuario mostrado
+            let usuario = document.getElementById("user");
+            usuario.innerHTML = username;
+
+            // Insertando el código de verificación
+            let codigo = document.getElementById("recovery-code");
+            codigo.innerHTML = recovery_code;
+
+            return dom.serialize();
+
+        }).catch((err) => { console.error(err); });
+        
+        // Después enviamos el correo mediante los servicios de comunicación de Azure
+        const emailMessage = {
+        senderAddress: "whisper-recovery@ff71f960-d15d-43b7-ae06-ccac18ebc514.azurecomm.net",
+        content: {
+            subject: `〘 Código de recuperación - Whisper-ESCOM 〙`,
+            plainText: "Código de recuperación: " + recovery_code + "\n\n¡Gracias por usar Whisper-ESCOM!",
+            html: html_mail,
+            },
+            recipients: {
+                to: [{ address: email }],
+            },
+        };
+    }  catch (error) {
+        console.error(error);
+    }    
 }
 
 module.exports = {
