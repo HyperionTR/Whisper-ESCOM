@@ -7,6 +7,7 @@
 	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css'>
 	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css'>
 	<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Handlee|Josefin+Sans:300,600&amp;display=swap'>
+	<link rel="stylesheet" href="./css/style.css">
   
 	<script src="./js/htmx.min.js" defer></script>
 
@@ -18,27 +19,27 @@
 	<section id="publicaciones">
 		
 		<div id="publicacion-propia">
-			<textarea name="whisper-propio" id="whisper-propio" cols="30" rows="10"></textarea>
+			<textarea name="whisper-text" id="whisper-text" cols="15" rows="5"></textarea>
 			<!-- El botón de whisper, tiene funcionalidad HTMX para enviar el whisper a la BD y recargar las publicaciones -->
 			
 			<button id="btn-publicar"
 				class="btn btn-lg btn-register"
-				hx-get="https://hub.dummyapis.com/delay?seconds=3"
+				hx-post="/whisper"
 				hx-target="div#publicaciones"
 				hx-trigger="click"
 				hx-swap="afterbegin"
 				hx-confirm="¿Estás seguro de publicar esto?"
-				hx-include="[name=whisper-propio]"
+				hx-include="[name=whisper-text]"
 				hx-indicator="#dots"
 			>Whisper</button>
 			<img id="dots" class="htmx-indicator" src="./img/rings.svg" alt="Cargando...">
 		</div>
 
 		<div id="publicaciones">
-			<textarea name="whisper" cols="30" rows="10" readonly>
+			<textarea name="whisper" cols="15" rows="5" readonly>
 				Esto es una publicación
 			</textarea>
-			<textarea name="whisper" cols="30" rows="10" readonly>
+			<textarea name="whisper" cols="15" rows="5" readonly>
 				Esto es otra
 			</textarea>
 		</div>

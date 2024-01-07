@@ -96,7 +96,7 @@ body{
   }
 
 .form-control{
-  font-family:'Handle', cursive
+  font-family:'Handle', cursive;
 }
 
 .form-control::-moz-placeholder{
@@ -275,4 +275,9 @@ a.link {
 
 a.link:hover {
   color: #4dd481;
+}
+
+.form-group {
+  display: inline-flex;
+  flex-direction: column;
 }

@@ -11,7 +11,7 @@ const {
     getPendingPasswordReset,
     getPublications
     } = require('./js/sqlconnector.js');
-const {sendVerifyMail: sendVerifyMail} = require('./js/mailer.js');
+const {sendVerifyMail, sendRecoveryMail} = require('./js/mailer.js');
 const bcrypt = require('bcrypt');
 
 // Creamos la aplicación express
@@ -42,24 +42,37 @@ app.post('/register', async (req, res) => {
         let pass = req.body.password;
         let code = req.body.codigo;
 
-        // Primero, para evitar que se quieran registrar accediendo a esta ruta directamente, vamos a verificar 
-        // que no halla duplicidad de datos en la BD
+        // Eliminar los espacios en blanco al inicio y al final de los datos
+        user = user.trim();
+        email = email.trim();
+        pass = pass.trim();
+        code = code.trim();
+
+        // Primero, para evitar que se quieran registrar accediendo a esta ruta directamente, vamos a verificar  que no halla duplicidad de datos en la BD
 
         try {
             // Antes de iniciar, verificamos si el usuario ya está registrado
-            let [rows, ] = await database.query("SELECT * FROM usuarios WHERE correo = ?", [email]);
+            let [rows, ] = await database.query("SELECT * FROM usuarios WHERE correo = ? OR usuario = ?", [email, user]);
+    
+            // Debemos hacer una comparación que no sea sensible a acentos y mayúsculas, para esto usamos localeCompare con sensitivity = base
+    
+            let email_compare = rows[0].correo.localeCompare(email, 'es', {sensitivity: 'base'});
+            let user_compare = rows[0].usuario.localeCompare(user, 'es', {sensitivity: 'base'});
+    
+            // Estas comparaciones son importantes ya que MySQL al hacer la petición SELECT, considera que "a" y "ä" son iguales, es decir, ignora los acentos
+    
             if (rows.length > 0) {
                 // Si el usuario o correo ya están registrados, se envia el codigo y el mensaje adecuado
-                if (rows[0].usuario === user) {
+                if (user_compare === 0) {
                     res.status(409).send("El nombre de usuario ya ha sido registrado.");
-                } else if (rows[0].correo === email) {
+                } else if (email_compare === 0) {
                     res.status(409).send("Este correo ya está registrado.");
                 }
                 return;
             }
     
         } catch (db_error) {
-            (console.error || console.log).call(console, "Error al verificar el correo ---\n" + db_error.stack || "Error al verificar el correo" + db_error);
+            (console.error || console.log).call(console, "Error al registrar usuario ---\n" + db_error.stack || "Error al registrar usuario" + db_error);
         }
 
         // Verificar que el codigo de verificación sea correcto, obteniendolo de la BD
@@ -78,13 +91,12 @@ app.post('/register', async (req, res) => {
             // Y se elimina el codigo de verificación de la BD
             database.query("DELETE FROM verificacion_email WHERE correo = ?", [email]);
         } else {
-            // Si el codigo de verificación es incorrecto, se envia el codigo
-            // 409 que significa "conflicto con el estado actual del servidor"
+            // Si el codigo de verificación es incorrecto, se envia el codigo 409 que significa "conflicto con el estado actual del servidor"
             res.status(409).send("El código de verificación es incorrecto.");
         }
     } catch (error) {
         (console.error || console.log).call(console, error.stack || error);
-        res.status(500).send('No se ingresaron los datos correctamente.');
+        res.status(500).send('Hubo un error durante el registro.' + error);
     }
 });
 
@@ -97,11 +109,19 @@ app.post('/verify', async (req, res) => {
     try {
         // Antes de iniciar, verificamos si el usuario ya está registrado
         let [rows, ] = await database.query("SELECT * FROM usuarios WHERE correo = ? OR usuario = ?", [email, user]);
+
+        // Debemos hacer una comparación que no sea sensible a acentos y mayúsculas, para esto usamos localeCompare con sensitivity = base
+
+        let email_compare = rows[0].correo.localeCompare(email, 'es', {sensitivity: 'base'});
+        let user_compare = rows[0].usuario.localeCompare(user, 'es', {sensitivity: 'base'});
+
+        // Estas comparaciones son importantes ya que MySQL al hacer la petición SELECT, considera que "a" y "ä" son iguales, es decir, ignora los acentos
+
         if (rows.length > 0) {
             // Si el usuario o correo ya están registrados, se envia el codigo y el mensaje adecuado
-            if (rows[0].usuario === user) {
+            if (user_compare === 0) {
                 res.status(409).send("El nombre de usuario ya ha sido registrado.");
-            } else if (rows[0].correo === email) {
+            } else if (email_compare === 0) {
                 res.status(409).send("Este correo ya está registrado.");
             }
             return;
@@ -113,38 +133,40 @@ app.post('/verify', async (req, res) => {
     
     // Generar un codigo aleatorio de 8 caracteres para la verificacion
     let verification_code = Math.random().toString(36).substring(2, 10);
-    
+    let verification_message = "Correo de verificación enviado.";
+
+    // Hacemos una verificación de que el correo ingresado sea válido
+
     try {
-    // Guardar el codigo de verificación en la BD con un statement preparado
-    // Nota: La sintaxis [rows, ] ignora el segundo parametro de la respuesta de la BD
+        
+        // Guardar el codigo de verificación en la BD con un statement preparado
+        // Nota: La sintaxis [rows, ] ignora el segundo parametro de la respuesta de la BD
         let [rows, ] = await database.query("INSERT INTO verificacion_email(correo, codigo_verificacion) VALUES(?, ?)", [email, verification_code]);
         
-        // Enviar un correo de verificación al usuario (con el codigo aleatorio)
-        sendVerifyMail(user, email, verification_code);
-
-        res.status(200).send("Correo de verificación enviado.");
     } catch (verify_error) {
         // verificamos que si el codigo de error es de duplicidad, se envie el codigo 409
         if (verify_error.code === "ER_DUP_ENTRY") {
-            res.status(200).send("Ya existe un código de verificación para este correo.");
+            // Actualizamos el mensaje de verificación
+            verification_message = "Ya existe un código de verificación para este correo.";
 
             // Obtenemos dicho codigo duplicado
             let [rows, ] = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
-            let verification_code = rows[0].codigo_verificacion;
-
-            sendVerifyMail(user, email, verification_code);
+            verification_code = rows[0].codigo_verificacion;
         } else {
             (console.error || console.log).call(console, "Error al verificar el correo ---\n" + verify_error.stack || "Error al verificar el correo" + verify_error);
             res.status(500).send("Error al verificar el correo: " + verify_error);
         }
+    } finally {
+        // Enviar un correo de verificación al usuario con el código de verificación
+        sendVerifyMail(user, email, verification_code);
+        res.status(200).send(verification_message);
     }
-
 });
 
 /**
  * Reenvia el correo de verificación o reestablecimiento al correo especificado
  */
-app.post('/resend', async (req, res) => {
+app.post('/resend/verify', async (req, res) => {
     // Obtenemos el correo al que se reenviara el correo
     let email = req.body.correo;
     let username = req.body.usuario;
@@ -152,16 +174,56 @@ app.post('/resend', async (req, res) => {
     try {
         // Obtenemos el codigo de verificación de la BD
         let [rows, ] = await database.query("SELECT codigo_verificacion FROM verificacion_email WHERE correo = ?", [email]);
+        
+        if (rows.length === 0) {
+            res.status(500).send("No existe el codigo de verificación en la BD");
+            return;
+        }
+
         let verification_code = rows[0].codigo_verificacion;
 
         // Enviamos el correo de verificación
         sendVerifyMail(username, email, verification_code);
         res.sendStatus(200);
     } catch (db_error) {
-        // Vemos si el error es que no existe el codigo de verificación en la BD
-        if (db_error.code === "ER_NO_SUCH_TABLE") {
-            res.status(500).send("No existe el codigo de verificación en la BD");
+        res.status(500).send("Hubo un error al enviar el correo de verificación:" + db_error);
+    }
+});
+
+app.post('/resend/reset', async (req, res) => {
+    // Obtenemos el dato que el usuario introdujo
+    let email_or_username = req.body.email;
+
+    // Obtenemos el usuario y correo de la BD
+    let [rows, ] = await database.query("SELECT id_usuario, usuario, correo FROM usuarios WHERE correo = ? OR usuario = ?", [email_or_username, email_or_username]);
+
+    if (rows.length === 0) {
+        res.status(404).send("Esta cuenta no existe.");
+        return;
+    }
+
+    // Me pregunto si podría haber un fallo en este punto...
+
+    let correo = rows[0].correo;
+    let username = rows[0].usuario;
+    let id_usuario = rows[0].id_usuario;
+
+    try {
+        // Obtenemos el codigo de restablecimiento de la BD
+        let [rows, ] = await database.query("SELECT codigo_restablecimiento FROM restablecimiento_password WHERE id_usuario = ?", [id_usuario]);
+        
+        if (rows.length === 0) {
+            res.status(500).send("No existe el codigo de restablecimiento en la BD");
+            return;
         }
+
+        let recovery_code = rows[0].codigo_restablecimiento;
+
+        // Enviamos el correo de verificación
+        sendRecoveryMail(username, correo, recovery_code);
+        res.sendStatus(200);
+    } catch (db_error) {
+        console.error(db_error);
     }
 });
 
@@ -194,10 +256,48 @@ app.post('/login', async (req, res) => {
 /**
  * Añade una nueva entrada en la tabla de restablecimiento de contraseña con un código de reestablecimiento
  * y envía un correo al usuario con el código
- */
+ */ 
 app.post('/forgot', async (req, res) => {
     // Este será un proceso similar al de registro, con su codigo de verificación y reestablecimiento de contraseña
-    res.send(200);
+
+    // Obenemos el correo o usiario de la petición
+    let user_or_email = req.body.email;
+
+    // Primero verificamos que el usuario exista en la BD
+    let [rows, ] = await database.query("SELECT id_usuario, usuario, correo FROM usuarios WHERE correo = ? or usuario = ?", [user_or_email, user_or_email]);
+
+    if (rows.length === 0) {
+        res.status(404).send("Esta cuenta no existe.");
+        return;
+    }
+
+    let correo = rows[0].correo;
+    let usuario = rows[0].usuario;
+    let id_usuario = rows[0].id_usuario;
+    let recovery_message = "OK";
+
+    // Si existe, generamos un codigo de reestablecimiento de contraseña
+    let recovery_code = Math.random().toString(36).substring(2, 10);
+
+    try {
+        // Guardamos el codigo de reestablecimiento en la BD
+        await database.query("INSERT INTO restablecimiento_password(id_usuario, codigo_restablecimiento) VALUES(?, ?)", [id_usuario, recovery_code]);
+    } catch (db_error) {
+
+        // verificamos que si el codigo de error es de duplicidad, se envie el codigo 409
+        if (db_error.code === "ER_DUP_ENTRY") {
+            recovery_message = "Ya existe un código de reestablecimiento para este usuario."
+
+            // Obtenemos dicho codigo duplicado
+            let [rows, ] = await database.query("SELECT codigo_restablecimiento FROM restablecimiento_password WHERE id_usuario = ?", [id_usuario]);
+            recovery_code = rows[0].codigo_restablecimiento;
+        }
+
+    } finally {
+        // Enviamos el correo de reestablecimiento de contraseña
+        sendRecoveryMail(usuario, correo, recovery_code);
+        res.send(recovery_message);
+    }
 });
 
 /**
@@ -205,8 +305,55 @@ app.post('/forgot', async (req, res) => {
  * verificando que el código de reestablecimiento sea correcto
  */
 app.post('/reset', async (req, res) => {
+
+    // Obtenemos los datos de la solicitud
+    let user_or_email = req.body['email'];
+    let new_password = req.body['res-password'];
+    let reset_code = req.body['res-code'];
+
+    // Eliminamos espacios en blanco al inicio y al final de los datos
+    user_or_email = user_or_email.trim();
+    new_password = new_password.trim();
+    reset_code = reset_code.trim();
+
+    // Obtenemos los datos del usuario de la BD
+    let [rows, ] =  await database.query("SELECT id_usuario, usuario, correo FROM usuarios WHERE usuario = ? OR correo = ?", [user_or_email, user_or_email]);
+
+    if (rows.length === 0) {
+        res.status(404).send("Esta cuenta no existe.");
+        return;
+    }  
+
+    let correo = rows[0].correo;
+    let usuario = rows[0].usuario;
+    let id_usuario = rows[0].id_usuario;
+
+    // Obtenemos el codigo de reestablecimiento de la BD
+    [rows, ] = await database.query("SELECT codigo_restablecimiento FROM restablecimiento_password WHERE id_usuario = ?", [id_usuario]);
+
+    if (rows.length === 0) {
+        res.status(500).send("No existe el codigo de restablecimiento en la BD");
+        return;
+    }
+
+    // Comparamos el codigo de reestablecimiento
+    if (rows[0].codigo_restablecimiento === reset_code) {
+        // Si el codigo de reestablecimiento es correcto, se modifica la contraseña del usuario
+        let hash = await bcrypt.hash(new_password, 10);
+        await database.query("UPDATE usuarios SET password = ? WHERE id_usuario = ?", [hash, id_usuario]);
+        res.send("Contraseña modificada.");
+
+        // Y se elimina el codigo de reestablecimiento de la BD
+        database.query("DELETE FROM restablecimiento_password WHERE id_usuario = ?", [id_usuario]);
+    } else {
+        res.status(409).send("El código de reestablecimiento es incorrecto.");
+    }
 });
 
+app.post('/whisper', async (req, res) => {
+    let text = req.body['whisper-text'];
+    res.send(`<textarea name="whisper" cols="15" rows="5"readonly> ${text} </textarea>`);
+});
 
 // RUTAS PARA DESARROLLO Y VERTIFICACION DE LA BD, BORRAR EN PRODUCCION
 app.get('/db', async (req, res) => {

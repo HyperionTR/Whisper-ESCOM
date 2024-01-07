@@ -76,11 +76,11 @@ async function sendRecoveryMail(username, email, recovery_code) {
 
         }).catch((err) => { console.error(err); });
         
-        // Después enviamos el correo mediante los servicios de comunicación de Azure
+        // Después creamos los detalles del correo mediante los servicios de comunicación de Azure
         const emailMessage = {
         senderAddress: "whisper-recovery@ff71f960-d15d-43b7-ae06-ccac18ebc514.azurecomm.net",
         content: {
-            subject: `〘 Código de recuperación - Whisper-ESCOM 〙`,
+            subject: `↱ Código de recuperación - Whisper-ESCOM ↲`,
             plainText: "Código de recuperación: " + recovery_code + "\n\n¡Gracias por usar Whisper-ESCOM!",
             html: html_mail,
             },
@@ -88,9 +88,15 @@ async function sendRecoveryMail(username, email, recovery_code) {
                 to: [{ address: email }],
             },
         };
+
+        // Finalmente, enviamos el correo
+        const poller = await emailClient.beginSend(emailMessage);
+        const result = await poller.pollUntilDone();
+        console.log(result);
     }  catch (error) {
         console.error(error);
     }    
+
 }
 
 module.exports = {

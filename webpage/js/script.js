@@ -35,7 +35,7 @@ function cssMostrarInput(){
 		element.style.transform = "scaleY(1)";
 		element.style.opacity = "1";
 		element.style.position = "relative";
-		element.style.display = "inline-block";
+		// element.style.display = "flex";
 	});
 }
 
@@ -45,7 +45,7 @@ function cssOcultarInput(){
 		element.style.transform = "scaleY(0)";
 		element.style.opacity = "0";
 		element.style.position = "absolute";
-		element.style.display = "inline-block";
+		// element.style.display = "inline-block";
 	});
 }
 
@@ -55,7 +55,7 @@ function cssOcultarEnlace(){
 		element.style.transform = "scaleY(0)";
 		element.style.opacity = "0";
 		element.style.position = "absolute";
-		element.style.display = "inline-block";
+		// element.style.display = "flex";
 	});
 }
 
@@ -65,6 +65,6 @@ function cssMostrarEnlace(){
 		element.style.transform = "scaleY(1)";
 		element.style.opacity = "1";
 		element.style.position = "relative";
-		element.style.display = "inline-block";
+		// element.style.display = "flex";
 	});
 }
