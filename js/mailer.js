@@ -4,7 +4,7 @@ const { JSDOM } = require('jsdom');
 const path = require('path');
 
 // Este código recupera la cadena de conexión de una variable de entorno.
-const connectionString = process.env.CUSTOMCONNSTR_COMMUNICATION_SERVICES_CONNECTION_STRING || "endpoint=https://whisper-escom-comms.unitedstates.communication.azure.com/;accesskey=oYa+3XY3xv3F8fLgCfZDIcQld69zcstQwGiHb5h8wztLvdnU+WuRWKv7aRtq1yxQhRg1Bl90WbS0OJShopQRdA==";
+const connectionString = process.env.COMMUNICATION_SERVICES_CONNECTION_STRING || "endpoint=https://whisper-escom-comms.unitedstates.communication.azure.com/;accesskey=bQQBfPL2Pd+1yM9BaGKUTeb7C2qYFsyji9urZem4fmhIxIG4PN8MrVvAiFe8V+dCDc8Zp2NEy9akotO/8Nag7Q==";
 const emailClient = new EmailClient(connectionString);
 
 // Paths
@@ -33,7 +33,7 @@ async function sendVerifyMail(username, email, verification_code) {
         }).catch((err) => { console.error(err); });
         
         const emailMessage = {
-        senderAddress: "whisper-verifier@ff71f960-d15d-43b7-ae06-ccac18ebc514.azurecomm.net",
+        senderAddress: "whisper-verify@1c186946-b43d-4553-ac67-48e24cdef1e6.azurecomm.net",
         content: {
             subject: `« Código de verificación - Whisper-ESCOM »`,
             plainText: "Código de verificación: " + verification_code + "\n\n¡Gracias por registrarte en Whisper-ESCOM!",
@@ -78,7 +78,7 @@ async function sendRecoveryMail(username, email, recovery_code) {
         
         // Después creamos los detalles del correo mediante los servicios de comunicación de Azure
         const emailMessage = {
-        senderAddress: "whisper-recovery@ff71f960-d15d-43b7-ae06-ccac18ebc514.azurecomm.net",
+        senderAddress: "whisper-recovery@1c186946-b43d-4553-ac67-48e24cdef1e6.azurecomm.net",
         content: {
             subject: `↱ Código de recuperación - Whisper-ESCOM ↲`,
             plainText: "Código de recuperación: " + recovery_code + "\n\n¡Gracias por usar Whisper-ESCOM!",
